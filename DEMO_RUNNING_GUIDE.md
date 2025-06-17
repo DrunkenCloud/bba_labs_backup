@@ -99,12 +99,6 @@ pnpm start
 
 **Access:** http://localhost:3000
 
-**Docker Alternative:**
-```bash
-docker build -t public-private-key-demo .
-docker run -p 3000:3000 public-private-key-demo
-```
-
 ---
 
 ### 4. VC-VP Demo (`vc-vp-demo/`)
@@ -119,7 +113,7 @@ cd vc-vp-demo
 
 **Run:**
 ```bash
-uvicorn app:app --reload --host 0.0.0.0 --port 8000
+python3 ./app.py
 ```
 
 **Access:** http://localhost:8000
@@ -140,7 +134,7 @@ cd vc-vp-demo-wallet
 
 **Backend Run:**
 ```bash
-uvicorn app:app --reload --host 0.0.0.0 --port 8000
+python3 ./app.py
 ```
 
 **Frontend Setup:**
@@ -210,7 +204,7 @@ cd did-based-secure-auth/addon
 
 **Backend Run:**
 ```bash
-uvicorn app:app --reload --host 0.0.0.0 --port 8000
+python3 ./app.py
 ```
 
 **Frontend Setup:**
@@ -242,7 +236,7 @@ cd did-based-secure-auth/alternative
 
 **Backend Run:**
 ```bash
-uvicorn app:app --reload --host 0.0.0.0 --port 8001
+python3 ./app.py
 ```
 
 **Frontend Setup:**
