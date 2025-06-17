@@ -2,6 +2,13 @@
 
 echo "🚀 Hardcoded setup for Blockchain Course Labs..."
 
+# Create and activate virtual environment
+echo "🐍 Creating Python virtual environment..."
+python3 -m venv .venv
+
+echo "🔧 Activating virtual environment..."
+source .venv/bin/activate
+
 dirs=(
   "blockchain-demo"
   "coin-demo"
