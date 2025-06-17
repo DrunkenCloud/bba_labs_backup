@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Presentation - DIDKit Web Interface</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <style>
+        body {
+            background-color: #f8f9fa;
+            min-height: 100vh;
+        }
+        .navbar {
+            background-color: #0d6efd;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .navbar-brand, .nav-link {
+            color: white !important;
+        }
+        .nav-link:hover {
+            opacity: 0.8;
+        }
+        .card {
+            border: none;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            transition: transform 0.2s;
+        }
+        .card:hover {
+            transform: translateY(-2px);
+        }
+        .btn-primary {
+            padding: 0.5rem 1.5rem;
+        }
+        pre {
+            background-color: #f8f9fa;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            border: 1px solid #dee2e6;
+        }
+        .loading {
+            display: none;
+            margin-left: 10px;
+        }
+        .result {
+            display: none;
+            margin-top: 1.5rem;
+        }
+        .form-floating {
+            margin-bottom: 1rem;
+        }
+        textarea.form-control {
+            min-height: 120px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark mb-4">
+        <div class="container">
+            <a class="navbar-brand" href="index.html">
+                <i class="bi bi-shield-lock me-2"></i>
+                DIDKit Web Interface
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav">
+                    <li class="nav-item">
+                        <a class="nav-link" href="index.html">
+                            <i class="bi bi-person-badge me-1"></i>Get DID
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="create-credential.html">
+                            <i class="bi bi-file-earmark-text me-1"></i>Create Credential
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="create-presentation.html">
+                            <i class="bi bi-file-earmark-slides me-1"></i>Create Presentation
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="verify-presentation.html">
+                            <i class="bi bi-shield-check me-1"></i>Verify Presentation
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-body">
+                        <h2 class="card-title mb-4">
+                            <i class="bi bi-file-earmark-slides me-2"></i>
+                            Create Signed Presentation
+                        </h2>
+                        <p class="text-muted mb-4">
+                            Fill in the form below to create a new signed presentation using your verifiable credential and holder JWK.
+                        </p>
+
+                        <form id="createPresentationForm">
+                            <div class="mb-3">
+                                <label for="verifiableCredential" class="form-label">Verifiable Credential (JSON)</label>
+                                <textarea class="form-control" id="verifiableCredential" name="verifiable_credential" rows="10" required 
+                                    placeholder='Paste your signed credential JSON here, e.g., {"@context": [...], "type": [...], ...}'></textarea>
+                            </div>
+
+                            <div class="mb-4">
+                                <label for="holderJwk" class="form-label">Holder JWK</label>
+                                <textarea class="form-control" id="holderJwk" name="holder_jwk" rows="5" required 
+                                    placeholder='Paste the JWK of the holder here, e.g., {"kty":"OKP","crv":"Ed25519",...}'></textarea>
+                            </div>
+
+                            <button type="submit" class="btn btn-primary" id="submitBtn">
+                                <i class="bi bi-plus-circle me-2"></i>Create Presentation
+                            </button>
+                            <div class="spinner-border text-primary loading" role="status" id="loadingSpinner">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                        </form>
+
+                        <div class="result" id="presentationResult">
+                            <div class="alert alert-success" role="alert">
+                                <i class="bi bi-check-circle me-2"></i>
+                                Presentation created successfully!
+                            </div>
+                            <div class="mb-3">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <label class="form-label fw-bold mb-0">Signed Presentation:</label>
+                                    <button class="btn btn-sm btn-outline-primary" onclick="copyToClipboard('signedPresentationOutput')">
+                                        <i class="bi bi-clipboard me-1"></i>Copy
+                                    </button>
+                                </div>
+                                <pre id="signedPresentationOutput" class="mb-0"></pre>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.getElementById('createPresentationForm').addEventListener('submit', async function(event) {
+            event.preventDefault();
+
+            const submitBtn = document.getElementById('submitBtn');
+            const loadingSpinner = document.getElementById('loadingSpinner');
+            const resultDiv = document.getElementById('presentationResult');
+
+            const verifiableCredentialStr = document.getElementById('verifiableCredential').value;
+            const holderJwkStr = document.getElementById('holderJwk').value;
+
+            try {
+                // Show loading state
+                submitBtn.disabled = true;
+                loadingSpinner.style.display = 'inline-block';
+                resultDiv.style.display = 'none';
+
+                const verifiableCredential = JSON.parse(verifiableCredentialStr);
+                const holderJwk = JSON.parse(holderJwkStr);
+
+                const response = await fetch('http://localhost:8000/create-presentation', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        verifiable_credential: verifiableCredential,
+                        holder_jwk: holderJwk
+                    })
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.detail || 'Failed to create presentation');
+                }
+
+                const data = await response.json();
+                document.getElementById('signedPresentationOutput').textContent = JSON.stringify(data.presentation, null, 2);
+                resultDiv.style.display = 'block';
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="alert alert-danger" role="alert">
+                        <i class="bi bi-exclamation-triangle me-2"></i>
+                        Error: ${error.message}
+                    </div>`;
+                resultDiv.style.display = 'block';
+            } finally {
+                // Reset loading state
+                submitBtn.disabled = false;
+                loadingSpinner.style.display = 'none';
+            }
+        });
+
+        async function copyToClipboard(elementId) {
+            const text = document.getElementById(elementId).textContent;
+            try {
+                await navigator.clipboard.writeText(text);
+                // Show success feedback
+                const button = event.target.closest('button');
+                const originalContent = button.innerHTML;
+                button.innerHTML = '<i class="bi bi-check me-1"></i>Copied!';
+                button.classList.remove('btn-outline-primary');
+                button.classList.add('btn-success');
+                setTimeout(() => {
+                    button.innerHTML = originalContent;
+                    button.classList.remove('btn-success');
+                    button.classList.add('btn-outline-primary');
+                }, 2000);
+            } catch (err) {
+                console.error('Failed to copy text: ', err);
+            }
+        }
+    </script>
+</body>
+</html>

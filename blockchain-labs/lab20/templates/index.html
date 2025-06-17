@@ -1,0 +1,36 @@
+<!doctype html>
+<html>
+<head>
+  <title>Lab 20 - Shamir Secret Sharing</title>
+</head>
+<body>
+  <h2>🔐 Shamir Secret Sharing (SSS)</h2>
+
+  <form method="post">
+    <h3>Step 1: Generate Shares</h3>
+    <input type="hidden" name="action" value="generate">
+    Secret: <input name="secret" type="number" required><br>
+    Threshold (k): <input name="threshold" type="number" required><br>
+    Total Shares (n): <input name="total" type="number" required><br>
+    <button type="submit">Generate</button>
+  </form>
+
+  {% if result %}
+    <h4>Generated Shares:</h4>
+    <pre>{{ result }}</pre>
+  {% endif %}
+
+  <hr>
+
+  <form method="post">
+    <h3>Step 2: Reconstruct Secret</h3>
+    <input type="hidden" name="action" value="reconstruct">
+    <textarea name="shares" rows="5" cols="40" placeholder="(1, 123)\n(2, 456)"></textarea><br>
+    <button type="submit">Reconstruct</button>
+  </form>
+
+  {% if reconstructed %}
+    <h4>✅ Reconstructed Secret: {{ reconstructed }}</h4>
+  {% endif %}
+</body>
+</html>
