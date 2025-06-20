@@ -17,8 +17,8 @@ app = FastAPI(title="VC + SMTP OTP Authentication")
 
 SMTP_SERVER = "smtp.gmail.com"
 SMTP_PORT = 587
-SMTP_USERNAME = "niranjhansu@gmail.com"
-SMTP_PASSWORD = "otmb ygkc cnyv tzib"
+SMTP_USERNAME = "<enter here>"
+SMTP_PASSWORD = "<enter here>"
 
 users_db = {}
 otp_store = {}
