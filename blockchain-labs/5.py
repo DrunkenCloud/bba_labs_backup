@@ -9,7 +9,7 @@ message = b"Sign me!"
 hash = SHA256.new(message)
 
 signature = pkcs1_15.new(key).sign(hash)
-print(signature.decode('utf-8'))
+print(signature)
 try:
     pkcs1_15.new(public_key).verify(hash, signature)
     print("Signature verified!")

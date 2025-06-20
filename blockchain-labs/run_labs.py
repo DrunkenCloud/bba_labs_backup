@@ -82,6 +82,8 @@ class BlockchainLabsRunner:
             print(f"Directory {lab_dir} not found")
             return False
 
+        processes_started = []
+
         # Check if it's a React app
         frontend_package = lab_path / "frontend" / "package.json"
         if frontend_package.exists():
@@ -90,12 +92,11 @@ class BlockchainLabsRunner:
                 process = subprocess.Popen(
                     ["npm", "start"],
                     cwd=lab_path / "frontend",
-                    shell=True,
-                    stdout=subprocess.DEVNULL,
-                    stderr=subprocess.DEVNULL
+                    shell=True
                 )
                 self.running_processes.append(process)
-                print("React frontend started in background")
+                processes_started.append(("React frontend", process))
+                print("React frontend started")
             except Exception as e:
                 print(f"Error starting React frontend: {e}")
 
@@ -106,14 +107,47 @@ class BlockchainLabsRunner:
             try:
                 process = subprocess.Popen(
                     [sys.executable, "app.py"],
-                    cwd=lab_path,
-                    stdout=subprocess.DEVNULL,
-                    stderr=subprocess.DEVNULL
+                    cwd=lab_path
                 )
                 self.running_processes.append(process)
-                print("Python web server started in background")
+                processes_started.append(("Python web server", process))
+                print("Python web server started")
             except Exception as e:
                 print(f"Error starting Python web server: {e}")
+
+        # If we started any processes, wait for them
+        if processes_started:
+            print()
+            print("Lab processes are running. Press Ctrl+C to stop and return to menu.")
+            print("=" * 60)
+            try:
+                # Wait for any process to finish
+                while True:
+                    for name, process in processes_started:
+                        if process.poll() is not None:
+                            print(f"\n{name} has stopped.")
+                            return True
+                    
+                    # Small delay to avoid busy waiting
+                    import time
+                    time.sleep(1)
+                    
+            except KeyboardInterrupt:
+                print(f"\nStopping {len(processes_started)} lab process(es)...")
+                for name, process in processes_started:
+                    try:
+                        process.terminate()
+                        process.wait(timeout=3)
+                        print(f"{name} stopped")
+                    except:
+                        try:
+                            process.kill()
+                            print(f"{name} force killed")
+                        except:
+                            pass
+                return True
+        else:
+            print("No lab processes found to run in this directory")
 
         return True
 
@@ -186,15 +220,21 @@ class BlockchainLabsRunner:
                 print("Truffle not found. Please install truffle first.")
                 return False
 
-        # Run the Flask app
+        # Run the Flask app and wait for it
         print("Starting lab28 Flask app...")
         print("-" * 80)
+        print("Flask app is running. Press Ctrl+C to stop and return to menu.")
+        print("=" * 60)
         
         try:
+            # Run the Flask app in foreground (wait for it)
             result = subprocess.run([sys.executable, "app.py"], 
                                   cwd=lab_path, 
                                   check=False)
             return result.returncode == 0
+        except KeyboardInterrupt:
+            print("\nFlask app stopped by user")
+            return True
         except Exception as e:
             print(f"Error running lab28: {e}")
             return False
@@ -204,29 +244,55 @@ class BlockchainLabsRunner:
         print("Stopping all lab processes...")
         
         # Stop processes we started
+        stopped_count = 0
         for process in self.running_processes:
             try:
-                process.terminate()
-                process.wait(timeout=5)
-            except:
-                try:
-                    process.kill()
-                except:
-                    pass
-        
-        # Kill python and node processes (similar to taskkill)
-        try:
-            for proc in psutil.process_iter(['pid', 'name']):
-                if proc.info['name'] in ['python.exe', 'python', 'node.exe', 'node']:
+                if process.poll() is None:  # Process is still running
+                    process.terminate()
                     try:
+                        process.wait(timeout=3)
+                        stopped_count += 1
+                    except subprocess.TimeoutExpired:
+                        process.kill()
+                        process.wait(timeout=1)
+                        stopped_count += 1
+            except Exception as e:
+                print(f"Error stopping process: {e}")
+        
+        # Only kill specific lab processes, NOT all python processes
+        current_pid = os.getpid()
+        lab_processes_killed = 0
+        
+        try:
+            for proc in psutil.process_iter(['pid', 'name', 'cmdline']):
+                try:
+                    # Skip our own process
+                    if proc.info['pid'] == current_pid:
+                        continue
+                    
+                    # Only target specific lab-related processes
+                    if proc.info['name'] in ['node.exe', 'node']:
                         proc.terminate()
-                    except:
-                        pass
-        except:
-            pass
+                        lab_processes_killed += 1
+                    elif proc.info['name'] in ['python.exe', 'python']:
+                        # Only kill Python processes that look like lab processes
+                        cmdline = proc.info.get('cmdline', [])
+                        if cmdline and len(cmdline) > 1:
+                            script_name = cmdline[1].lower()
+                            # Kill if it's a lab script or app.py, but NOT our runner
+                            if ('lab' in script_name or 
+                                'app.py' in script_name or 
+                                'server.py' in script_name) and 'lab_runner.py' not in script_name:
+                                proc.terminate()
+                                lab_processes_killed += 1
+                                
+                except (psutil.NoSuchProcess, psutil.AccessDenied, IndexError):
+                    pass
+        except Exception as e:
+            print(f"Warning: Error during process cleanup: {e}")
         
         self.running_processes.clear()
-        print("All lab processes stopped")
+        print(f"Stopped {stopped_count} tracked processes and {lab_processes_killed} lab processes")
 
     def main_loop(self):
         print("Blockchain Labs Runner for Python")
@@ -238,7 +304,7 @@ class BlockchainLabsRunner:
         try:
             while True:
                 self.print_subsection("LAB SELECTION")
-                print("Enter lab number to run (or 'q' to quit):")
+                print("Enter lab number to run, 'l' to list labs, or 'q' to quit:")
                 print("-" * 80)
                 choice = input("> ").strip()
                 
@@ -248,6 +314,9 @@ class BlockchainLabsRunner:
                     print("Goodbye!")
                     self.print_separator()
                     break
+                elif choice.lower() == 'l':
+                    self.list_labs()
+                    continue
                 
                 # Stop any running labs
                 self.stop_labs()
@@ -258,12 +327,15 @@ class BlockchainLabsRunner:
                 elif choice.isdigit() and 24 <= int(choice) <= 27:
                     # Check if it's lab24_27 (labs 24-27)
                     self.run_lab24_27(choice)
-                elif Path(f"lab{choice}").exists():
-                    # Check if it's a lab directory
-                    self.run_lab_directory(f"lab{choice}")
                 elif choice == "28":
-                    # Check if it's lab28
+                    # Run lab28 with Truffle setup
                     self.run_lab28()
+                elif Path(f"lab{choice}").exists():
+                    # Check if it's a lab directory (but not lab28, which needs special handling)
+                    if choice == "28":
+                        self.run_lab28()
+                    else:
+                        self.run_lab_directory(f"lab{choice}")
                 else:
                     self.print_subsection("ERROR")
                     print("Invalid lab number. Please try again.")
