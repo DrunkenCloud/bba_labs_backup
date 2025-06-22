@@ -4,7 +4,6 @@ import sys
 import subprocess
 import glob
 import signal
-import psutil
 from pathlib import Path
 
 class BlockchainLabsRunner:
@@ -259,41 +258,8 @@ class BlockchainLabsRunner:
             except Exception as e:
                 print(f"Error stopping process: {e}")
         
-        # Only kill specific lab processes, NOT all python processes
-        current_pid = os.getpid()
-        lab_processes_killed = 0
-        
-        try:
-            for proc in psutil.process_iter(['pid', 'name', 'cmdline']):
-                try:
-                    # Skip our own process
-                    if proc.info['pid'] == current_pid:
-                        continue
-                    
-                    # Only target specific lab-related processes
-                    if proc.info['name'] in ['node.exe', 'node']:
-                        proc.terminate()
-                        lab_processes_killed += 1
-                    elif proc.info['name'] in ['python.exe', 'python']:
-                        # Only kill Python processes that look like lab processes
-                        cmdline = proc.info.get('cmdline', [])
-                        if cmdline and len(cmdline) > 1:
-                            script_name = cmdline[1].lower()
-                            # Kill if it's a lab script or app.py, but NOT our runner
-                            if ('lab' in script_name or 
-                                'app.py' in script_name or 
-                                'server.py' in script_name) and 'lab_runner.py' not in script_name:
-                                proc.terminate()
-                                lab_processes_killed += 1
-                                
-                except (psutil.NoSuchProcess, psutil.AccessDenied, IndexError):
-                    pass
-        except Exception as e:
-            print(f"Warning: Error during process cleanup: {e}")
-        
         self.running_processes.clear()
-        print(f"Stopped {stopped_count} tracked processes and {lab_processes_killed} lab processes")
-
+        
     def main_loop(self):
         print("Blockchain Labs Runner for Python")
         print()
@@ -307,19 +273,16 @@ class BlockchainLabsRunner:
                 print("Enter lab number to run, 'l' to list labs, or 'q' to quit:")
                 print("-" * 80)
                 choice = input("> ").strip()
+                self.stop_labs()
                 
                 if choice.lower() == 'q':
                     self.print_subsection("EXITING")
-                    self.stop_labs()
                     print("Goodbye!")
                     self.print_separator()
                     break
                 elif choice.lower() == 'l':
                     self.list_labs()
                     continue
-                
-                # Stop any running labs
-                self.stop_labs()
                 
                 # Check if it's a Python file
                 if Path(f"{choice}.py").exists():

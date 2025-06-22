@@ -1,5 +1,3 @@
-// Template for the homepage for flask App
-// root_dir/templates/index.html
 <!DOCTYPE html>
 <html>
 <head>
@@ -29,10 +27,6 @@
 <body>
     <div class="container">
         <h1>Blockchain Explorer</h1>
-        
-        <div class="user-info">
-            <strong>Your Session ID:</strong> {{ user_id[:8] }}... (Each user has their own blockchain!)
-        </div>
         
         <div class="session-controls">
             <a href="/new_session" class="session-btn" style="text-decoration: none; display: inline-block;">🔄 Start New Session</a>
