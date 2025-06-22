@@ -1,18 +1,15 @@
 @echo off
-REM Batch file to run blockchain labs with virtual environment
-REM Activates .venv, changes to blockchain-labs directory, and runs run_labs.py
+REM Activate and run the Python script
 
 echo Starting Blockchain Labs with Virtual Environment...
-echo.
-
-REM Activate virtual environment and run the script
 call .venv\Scripts\activate.bat
 cd blockchain-labs
 python run_labs.py %*
+set EXITCODE=%ERRORLEVEL%
 
-REM Pause to see any error messages
-if errorlevel 1 (
+REM Only treat exit codes 2 or above as "real" errors
+if %EXITCODE% GEQ 2 (
     echo.
-    echo An error occurred. Press any key to exit...
+    echo ❌ An error occurred. Exit code: %EXITCODE%
     pause >nul
-) 
+)

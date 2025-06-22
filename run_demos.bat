@@ -7,6 +7,8 @@ echo.
 REM Activate virtual environment
 call .venv\Scripts\activate.bat
 
+goto start_demomsg
+
 REM Function to run a demo with error handling
 :run_demo
 set "demo_name=%~1"
@@ -25,6 +27,7 @@ if exist "%demo_path%" (
 )
 goto :eof
 
+:start_demomsg
 REM Start all demos
 echo Starting all demo labs...
 echo ============================================================
