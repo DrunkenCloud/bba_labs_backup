@@ -24,5 +24,5 @@ class Block:
                 return hash_attempt
             self.nonce += 1
 
-genesis = Block("Genesis Block", "0", difficulty=3)
+genesis = Block("Genesis Block", "0", difficulty=6)
 print("Genesis Hash:", genesis.hash)

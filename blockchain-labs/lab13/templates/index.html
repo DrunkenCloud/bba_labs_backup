@@ -1,46 +1,205 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Distributed Blockchain Nodes</title>
+    <title>Distributed Blockchain Nodes - Consensus</title>
     <style>
-        body { font-family: Arial; }
-        .node { border: 2px solid #333; margin: 10px; padding: 10px; border-radius: 10px; display: inline-block; vertical-align: top; width: 30%; }
-        .block { border: 1px solid #ccc; margin: 5px; padding: 5px; border-radius: 5px; }
-        .invalid { border-color: red; }
-        .actions { margin-bottom: 10px; }
-        .valid { color: green; }
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            margin: 0; 
+            padding: 20px; 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        h2 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 30px;
+            font-size: 2.2em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        }
+        .consensus-section {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: linear-gradient(145deg, #e8f5e8, #d4edda);
+            border-radius: 10px;
+            border: 2px solid #28a745;
+        }
+        .consensus-btn {
+            padding: 15px 30px;
+            background: linear-gradient(45deg, #28a745, #20c997);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+        }
+        .consensus-btn:hover {
+            background: linear-gradient(45deg, #20c997, #17a2b8);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(40, 167, 69, 0.4);
+        }
+        .nodes-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 25px;
+            margin-top: 30px;
+        }
+        .node {
+            border: 2px solid #17a2b8;
+            border-radius: 15px;
+            padding: 20px;
+            background: linear-gradient(145deg, #f8f9fa, #e9ecef);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .node:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+        }
+        .node h2 {
+            color: #2c3e50;
+            margin-top: 0;
+            text-align: center;
+            font-size: 1.5em;
+        }
+        .actions {
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .actions input {
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            width: 60%;
+            margin-right: 10px;
+            font-size: 14px;
+        }
+        .actions button {
+            padding: 12px 20px;
+            background: linear-gradient(45deg, #17a2b8, #138496);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+        .actions button:hover {
+            background: linear-gradient(45deg, #138496, #0f6674);
+            transform: translateY(-2px);
+        }
+        .block {
+            border: 1px solid #ddd;
+            margin: 10px 0;
+            padding: 15px;
+            border-radius: 10px;
+            background: white;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+        }
+        .block:hover {
+            box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+        }
+        .block p {
+            margin: 8px 0;
+            font-size: 14px;
+        }
+        .block strong {
+            color: #2c3e50;
+        }
+        .tamper-form {
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid #eee;
+        }
+        .tamper-form input {
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            width: 60%;
+            margin-right: 8px;
+        }
+        .tamper-form button {
+            padding: 8px 15px;
+            background: linear-gradient(45deg, #e74c3c, #c0392b);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        .tamper-form button:hover {
+            background: linear-gradient(45deg, #c0392b, #a93226);
+        }
+        .hash-display {
+            font-family: 'Courier New', monospace;
+            background: #f8f9fa;
+            padding: 5px;
+            border-radius: 4px;
+            font-size: 12px;
+            word-break: break-all;
+        }
+        .consensus-info {
+            background: #e3f2fd;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border-left: 4px solid #2196f3;
+        }
     </style>
 </head>
 <body>
-    <h2>🔗 Blockchain Nodes (Majority Consensus Mode)</h2>
-    <form action="/consensus">
-        <button type="submit">🤝 Run Consensus</button>
-    </form>
-    <div style="display: flex; gap: 20px;">
-    {% for id, bc in nodes.items() %}
-        <div class="node">
-            <h2>Node {{ id }}</h2>
-            <form class="actions" action="/add/{{ id }}" method="POST">
-                <input type="text" name="data" placeholder="Data">
-                <button type="submit">Add Block</button>
+    <div class="container">
+        <h2>🔗 Blockchain Nodes (Majority Consensus Mode)</h2>
+        
+        <div class="consensus-section">
+            <div class="consensus-info">
+                <strong>🤝 Consensus Algorithm:</strong> This demo shows how blockchain nodes can reach consensus 
+                by comparing their chains and adopting the longest valid chain.
+            </div>
+            <form action="/consensus">
+                <button type="submit" class="consensus-btn">🤝 Run Consensus</button>
             </form>
-
-            {% for block in bc.chain %}
-                <div class="block">
-                    <p><strong>#{{ loop.index0 }}</strong></p>
-                    <p>Data: {{ block.data }}</p>
-                    <p>Hash: {{ block.hash[:20] }}</p>
-                    <p>Prev: {{ block.prev_hash[:20] }}</p>
-                    {% if not loop.first %}
-                    <form action="/tamper/{{ id }}/{{ loop.index0 }}" method="POST">
-                        <input type="text" name="new_data" placeholder="Tamper Data">
-                        <button type="submit">Tamper</button>
-                    </form>
-                    {% endif %}
-                </div>
-            {% endfor %}
         </div>
-    {% endfor %}
+        
+        <div class="nodes-container">
+        {% for id, bc in nodes.items() %}
+            <div class="node">
+                <h2>Node {{ id }}</h2>
+                <form class="actions" action="/add/{{ id }}" method="POST">
+                    <input type="text" name="data" placeholder="Enter block data..." required>
+                    <button type="submit">➕ Add Block</button>
+                </form>
+
+                {% for block in bc.chain %}
+                    <div class="block">
+                        <p><strong>Block #{{ loop.index0 }}</strong></p>
+                        <p><strong>Data:</strong> {{ block.data }}</p>
+                        <p><strong>Hash:</strong> <span class="hash-display">{{ block.hash[:20] }}</span></p>
+                        <p><strong>Previous:</strong> <span class="hash-display">{{ block.prev_hash[:20] }}</span></p>
+                        {% if not loop.first %}
+                        <form class="tamper-form" action="/tamper/{{ id }}/{{ loop.index0 }}" method="POST">
+                            <input type="text" name="new_data" placeholder="Tamper with data...">
+                            <button type="submit">🔧 Tamper</button>
+                        </form>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            </div>
+        {% endfor %}
+        </div>
     </div>
 </body>
 </html>

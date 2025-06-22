@@ -2,35 +2,215 @@
 <html>
 <head>
   <title>Lab 20 - Shamir Secret Sharing</title>
+  <style>
+    body { 
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+      margin: 0; 
+      padding: 20px; 
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+    }
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 15px;
+      padding: 40px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    }
+    h2 {
+      text-align: center;
+      color: #2c3e50;
+      margin-bottom: 30px;
+      font-size: 2.2em;
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+    }
+    h3 {
+      color: #34495e;
+      margin-bottom: 20px;
+      font-size: 1.4em;
+    }
+    .step-section {
+      background: #f8f9fa;
+      padding: 30px;
+      border-radius: 15px;
+      margin-bottom: 30px;
+      border-left: 4px solid #007bff;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+    .step-section h3 {
+      margin-top: 0;
+      color: #007bff;
+    }
+    .form-group {
+      margin-bottom: 20px;
+    }
+    .form-group label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: bold;
+      color: #495057;
+    }
+    .form-group input, .form-group textarea {
+      width: 100%;
+      padding: 12px;
+      border: 2px solid #ddd;
+      border-radius: 8px;
+      font-size: 16px;
+      transition: border-color 0.3s ease;
+      box-sizing: border-box;
+      font-family: 'Courier New', monospace;
+    }
+    .form-group input:focus, .form-group textarea:focus {
+      outline: none;
+      border-color: #007bff;
+      box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+    }
+    .form-group textarea {
+      resize: vertical;
+      min-height: 100px;
+    }
+    .submit-btn {
+      padding: 15px 30px;
+      background: linear-gradient(45deg, #007bff, #0056b3);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    .submit-btn:hover {
+      background: linear-gradient(45deg, #0056b3, #004085);
+      transform: translateY(-2px);
+    }
+    .result-section {
+      background: linear-gradient(145deg, #d4edda, #c3e6cb);
+      padding: 25px;
+      border-radius: 10px;
+      margin-top: 20px;
+      border-left: 4px solid #28a745;
+    }
+    .result-section h4 {
+      color: #155724;
+      margin-top: 0;
+      font-size: 1.2em;
+    }
+    .result-section pre {
+      background: white;
+      padding: 15px;
+      border-radius: 8px;
+      border: 1px solid #c3e6cb;
+      overflow-x: auto;
+      font-family: 'Courier New', monospace;
+      font-size: 14px;
+      line-height: 1.4;
+    }
+    .reconstructed-section {
+      background: linear-gradient(145deg, #e8f5e8, #d4edda);
+      padding: 25px;
+      border-radius: 10px;
+      margin-top: 20px;
+      border-left: 4px solid #28a745;
+    }
+    .reconstructed-section h4 {
+      color: #155724;
+      margin-top: 0;
+      font-size: 1.2em;
+    }
+    .divider {
+      text-align: center;
+      margin: 40px 0;
+      position: relative;
+    }
+    .divider::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, #007bff, transparent);
+    }
+    .divider span {
+      background: white;
+      padding: 0 30px;
+      color: #007bff;
+      font-weight: bold;
+      font-size: 18px;
+    }
+    .info-box {
+      background: #e3f2fd;
+      padding: 20px;
+      border-radius: 10px;
+      margin-bottom: 25px;
+      border-left: 4px solid #2196f3;
+    }
+    .info-box p {
+      margin: 0;
+      color: #0d47a1;
+      line-height: 1.6;
+    }
+  </style>
 </head>
 <body>
-  <h2>🔐 Shamir Secret Sharing (SSS)</h2>
+  <div class="container">
+    <h2>🔐 Shamir Secret Sharing (SSS)</h2>
+    
+    <div class="info-box">
+      <p><strong>ℹ️ How it works:</strong> Shamir's Secret Sharing splits a secret into n shares, where any k shares can reconstruct the original secret. 
+      This provides both security (no single point of failure) and redundancy (can recover from lost shares).</p>
+    </div>
 
-  <form method="post">
-    <h3>Step 1: Generate Shares</h3>
-    <input type="hidden" name="action" value="generate">
-    Secret: <input name="secret" type="number" required><br>
-    Threshold (k): <input name="threshold" type="number" required><br>
-    Total Shares (n): <input name="total" type="number" required><br>
-    <button type="submit">Generate</button>
-  </form>
+    <div class="step-section">
+      <form method="post">
+        <input type="hidden" name="action" value="generate">
+        <h3>📤 Step 1: Generate Shares</h3>
+        <div class="form-group">
+          <label for="secret">Secret (number):</label>
+          <input id="secret" name="secret" type="number" required placeholder="Enter a secret number...">
+        </div>
+        <div class="form-group">
+          <label for="threshold">Threshold (k):</label>
+          <input id="threshold" name="threshold" type="number" required placeholder="Minimum shares needed to reconstruct" min="1">
+        </div>
+        <div class="form-group">
+          <label for="total">Total Shares (n):</label>
+          <input id="total" name="total" type="number" required placeholder="Total number of shares to generate" min="1">
+        </div>
+        <button type="submit" class="submit-btn">🔧 Generate Shares</button>
+      </form>
 
-  {% if result %}
-    <h4>Generated Shares:</h4>
-    <pre>{{ result }}</pre>
-  {% endif %}
+      {% if result %}
+        <div class="result-section">
+          <h4>📋 Generated Shares:</h4>
+          <pre>{{ result }}</pre>
+        </div>
+      {% endif %}
+    </div>
 
-  <hr>
+    <div class="divider">
+      <span>🔗</span>
+    </div>
 
-  <form method="post">
-    <h3>Step 2: Reconstruct Secret</h3>
-    <input type="hidden" name="action" value="reconstruct">
-    <textarea name="shares" rows="5" cols="40" placeholder="(1, 123)\n(2, 456)"></textarea><br>
-    <button type="submit">Reconstruct</button>
-  </form>
+    <div class="step-section">
+      <form method="post">
+        <input type="hidden" name="action" value="reconstruct">
+        <h3>📥 Step 2: Reconstruct Secret</h3>
+        <div class="form-group">
+          <label for="shares">Shares (one per line, format: (x, y)):</label>
+          <textarea id="shares" name="shares" rows="5" placeholder="(1, 123)&#10;(2, 456)&#10;(3, 789)&#10;..."></textarea>
+        </div>
+        <button type="submit" class="submit-btn">🔓 Reconstruct Secret</button>
+      </form>
 
-  {% if reconstructed %}
-    <h4>✅ Reconstructed Secret: {{ reconstructed }}</h4>
-  {% endif %}
+      {% if reconstructed %}
+        <div class="reconstructed-section">
+          <h4>✅ Reconstructed Secret: <strong>{{ reconstructed }}</strong></h4>
+        </div>
+      {% endif %}
+    </div>
+  </div>
 </body>
 </html>

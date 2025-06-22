@@ -37,4 +37,38 @@ else
   echo "❌ No requirements.txt found in root directory."
 fi
 
+# Compile and migrate Truffle contracts for lab24_27
+echo "🔧 Compiling and migrating Truffle contracts for lab24_27..."
+if [ -d "blockchain-labs/lab24_27" ]; then
+  cd blockchain-labs/lab24_27
+  if command -v truffle &> /dev/null; then
+    echo "📦 Running truffle compile..."
+    truffle compile
+    echo "🚀 Running truffle migrate..."
+    truffle migrate
+  else
+    echo "❌ Truffle not found. Please install truffle first."
+  fi
+  cd - > /dev/null
+else
+  echo "❌ Directory blockchain-labs/lab24_27 does not exist, skipping."
+fi
+
+# Compile and migrate Truffle contracts for lab28
+echo "🔧 Compiling and migrating Truffle contracts for lab28..."
+if [ -d "blockchain-labs/lab28" ]; then
+  cd blockchain-labs/lab28
+  if command -v truffle &> /dev/null; then
+    echo "📦 Running truffle compile..."
+    truffle compile
+    echo "🚀 Running truffle migrate..."
+    truffle migrate
+  else
+    echo "❌ Truffle not found. Please install truffle first."
+  fi
+  cd - > /dev/null
+else
+  echo "❌ Directory blockchain-labs/lab28 does not exist, skipping."
+fi
+
 echo "✅ Setup complete!"

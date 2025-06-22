@@ -2,33 +2,192 @@
 <html>
 <head>
   <title>Lab 19 - Flask Auth</title>
+  <style>
+    body { 
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+      margin: 0; 
+      padding: 20px; 
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+    }
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 15px;
+      padding: 40px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    }
+    h2 {
+      text-align: center;
+      color: #2c3e50;
+      margin-bottom: 30px;
+      font-size: 2.2em;
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+    }
+    h3 {
+      color: #34495e;
+      margin-bottom: 20px;
+      font-size: 1.4em;
+    }
+    .welcome-section {
+      background: linear-gradient(145deg, #d4edda, #c3e6cb);
+      padding: 25px;
+      border-radius: 10px;
+      margin-bottom: 30px;
+      border-left: 4px solid #28a745;
+    }
+    .welcome-section h3 {
+      color: #155724;
+      margin-top: 0;
+    }
+    .welcome-section p {
+      margin: 10px 0;
+      color: #155724;
+    }
+    .logout-btn {
+      display: inline-block;
+      padding: 12px 25px;
+      background: linear-gradient(45deg, #e74c3c, #c0392b);
+      color: white;
+      text-decoration: none;
+      border-radius: 8px;
+      font-weight: bold;
+      transition: all 0.3s ease;
+    }
+    .logout-btn:hover {
+      background: linear-gradient(45deg, #c0392b, #a93226);
+      transform: translateY(-2px);
+    }
+    .form-section {
+      background: #f8f9fa;
+      padding: 25px;
+      border-radius: 10px;
+      margin-bottom: 25px;
+      border-left: 4px solid #007bff;
+    }
+    .form-section h3 {
+      margin-top: 0;
+      color: #007bff;
+    }
+    .form-group {
+      margin-bottom: 20px;
+    }
+    .form-group label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: bold;
+      color: #495057;
+    }
+    .form-group input {
+      width: 100%;
+      padding: 12px;
+      border: 2px solid #ddd;
+      border-radius: 8px;
+      font-size: 16px;
+      transition: border-color 0.3s ease;
+      box-sizing: border-box;
+    }
+    .form-group input:focus {
+      outline: none;
+      border-color: #007bff;
+      box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+    }
+    .submit-btn {
+      width: 100%;
+      padding: 15px;
+      background: linear-gradient(45deg, #007bff, #0056b3);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    .submit-btn:hover {
+      background: linear-gradient(45deg, #0056b3, #004085);
+      transform: translateY(-2px);
+    }
+    .divider {
+      text-align: center;
+      margin: 30px 0;
+      position: relative;
+    }
+    .divider::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 0;
+      right: 0;
+      height: 1px;
+      background: #ddd;
+    }
+    .divider span {
+      background: white;
+      padding: 0 20px;
+      color: #6c757d;
+      font-weight: bold;
+    }
+    .user-info {
+      background: #e3f2fd;
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      border-left: 4px solid #2196f3;
+    }
+  </style>
 </head>
 <body>
-  <h2>🔐 Flask Login System</h2>
+  <div class="container">
+    <h2>🔐 Flask Login System</h2>
 
-  {% if user %}
-    <h3>Welcome, {{ user }}!</h3>
-    <p><strong>Bio:</strong> {{ users[user]['bio'] }}</p>
-    <p><strong>Joined:</strong> {{ users[user]['joined'] }}</p>
-    <a href="/logout">Logout</a>
-  {% else %}
-    <form method="post">
-      <input type="hidden" name="action" value="login">
-      <h3>Login</h3>
-      Username: <input name="username"><br>
-      Password: <input name="password" type="password"><br>
-      <button type="submit">Login</button>
-    </form>
+    {% if user %}
+      <div class="welcome-section">
+        <h3>Welcome, {{ user }}! 👋</h3>
+        <div class="user-info">
+          <p><strong>Bio:</strong> {{ users[user]['bio'] }}</p>
+          <p><strong>Joined:</strong> {{ users[user]['joined'] }}</p>
+        </div>
+        <a href="/logout" class="logout-btn">🚪 Logout</a>
+      </div>
+    {% else %}
+      <div class="form-section">
+        <form method="post">
+          <input type="hidden" name="action" value="login">
+          <h3>🔑 Login</h3>
+          <div class="form-group">
+            <label for="login-username">Username:</label>
+            <input id="login-username" name="username" type="text" required>
+          </div>
+          <div class="form-group">
+            <label for="login-password">Password:</label>
+            <input id="login-password" name="password" type="password" required>
+          </div>
+          <button type="submit" class="submit-btn">🔐 Login</button>
+        </form>
+      </div>
 
-    <hr>
+      <div class="divider">
+        <span>OR</span>
+      </div>
 
-    <form method="post">
-      <input type="hidden" name="action" value="signup">
-      <h3>Signup</h3>
-      Username: <input name="username"><br>
-      Password: <input name="password" type="password"><br>
-      <button type="submit">Signup</button>
-    </form>
-  {% endif %}
+      <div class="form-section">
+        <form method="post">
+          <input type="hidden" name="action" value="signup">
+          <h3>📝 Signup</h3>
+          <div class="form-group">
+            <label for="signup-username">Username:</label>
+            <input id="signup-username" name="username" type="text" required>
+          </div>
+          <div class="form-group">
+            <label for="signup-password">Password:</label>
+            <input id="signup-password" name="password" type="password" required>
+          </div>
+          <button type="submit" class="submit-btn">📝 Signup</button>
+        </form>
+      </div>
+    {% endif %}
+  </div>
 </body>
 </html>

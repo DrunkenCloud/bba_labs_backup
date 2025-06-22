@@ -5,29 +5,70 @@
 <head>
     <title>Blockchain Visualizer</title>
     <style>
-        body { font-family: Arial; margin: 20px; }
-        .block { border: 2px solid #4CAF50; padding: 10px; margin-bottom: 20px; border-radius: 10px; }
-        .block h3 { margin-top: 0; }
-        .add-form { margin-bottom: 30px; }
+        body { font-family: Arial; margin: 20px; background-color: #f5f5f5; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        .block { border: 2px solid #4CAF50; padding: 15px; margin-bottom: 20px; border-radius: 10px; background-color: white; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .block h3 { margin-top: 0; color: #2E7D32; }
+        .add-form, .difficulty-form { margin-bottom: 30px; padding: 20px; background-color: white; border-radius: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .difficulty-form { border-left: 4px solid #FF9800; }
+        .add-form { border-left: 4px solid #4CAF50; }
+        input[type="text"], input[type="number"] { padding: 10px; margin: 5px; border: 1px solid #ddd; border-radius: 5px; width: 200px; }
+        button { padding: 10px 20px; margin: 5px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; }
+        .add-btn { background-color: #4CAF50; color: white; }
+        .difficulty-btn { background-color: #FF9800; color: white; }
+        .session-btn { background-color: #2196F3; color: white; }
+        .add-btn:hover { background-color: #45a049; }
+        .difficulty-btn:hover { background-color: #e68900; }
+        .session-btn:hover { background-color: #1976D2; }
+        .current-difficulty { font-size: 18px; font-weight: bold; color: #FF9800; margin-bottom: 10px; }
+        .user-info { font-size: 14px; color: #666; margin-bottom: 20px; padding: 10px; background-color: #e3f2fd; border-radius: 5px; }
+        .warning { color: #f44336; font-weight: bold; margin-top: 10px; }
+        .session-controls { margin-bottom: 20px; }
     </style>
 </head>
 <body>
-    <h1>Blockchain Explorer</h1>
+    <div class="container">
+        <h1>Blockchain Explorer</h1>
+        
+        <div class="user-info">
+            <strong>Your Session ID:</strong> {{ user_id[:8] }}... (Each user has their own blockchain!)
+        </div>
+        
+        <div class="session-controls">
+            <a href="/new_session" class="session-btn" style="text-decoration: none; display: inline-block;">🔄 Start New Session</a>
+            <span style="color: #666; font-size: 12px; margin-left: 10px;">(Creates a fresh blockchain)</span>
+        </div>
+        
+        <div class="current-difficulty">
+            Current Difficulty: {{ difficulty }} ({{ "0" * difficulty }}...)
+        </div>
 
-    <form class="add-form" action="/add" method="POST">
-        <input type="text" name="data" placeholder="Enter data for new block" required>
-        <button type="submit">Add Block</button>
-    </form>
+        <form class="difficulty-form" action="/set_difficulty" method="POST">
+            <h3>Set Mining Difficulty</h3>
+            <p>Change the difficulty to control how hard it is to mine blocks. Higher difficulty = more leading zeros required.</p>
+            <input type="number" name="difficulty" placeholder="Enter difficulty (1-8)" min="1" max="8" value="{{ difficulty }}" required>
+            <button type="submit" class="difficulty-btn">Set Difficulty & Clear Blockchain</button>
+            <div class="warning">⚠️ Warning: Changing difficulty will clear all blocks except the genesis block!</div>
+        </form>
 
-    {% for block in chain %}
-    <div class="block">
-        <h3>Block {{ loop.index0 }}</h3>
-        <p><strong>Data:</strong> {{ block.data }}</p>
-        <p><strong>Timestamp:</strong> {{ block.timestamp | round(2) }}</p>
-        <p><strong>Nonce:</strong> {{ block.nonce }}</p>
-        <p><strong>Prev Hash:</strong> {{ block.prev_hash }}</p>
-        <p><strong>Hash:</strong> {{ block.hash }}</p>
+        <form class="add-form" action="/add" method="POST">
+            <h3>Add New Block</h3>
+            <input type="text" name="data" placeholder="Enter data for new block" required>
+            <button type="submit" class="add-btn">Add Block</button>
+        </form>
+
+        <h2>Your Blockchain ({{ chain|length }} blocks)</h2>
+        {% for block in chain %}
+        <div class="block">
+            <h3>Block {{ loop.index0 }}</h3>
+            <p><strong>Data:</strong> {{ block.data }}</p>
+            <p><strong>Timestamp:</strong> {{ block.timestamp | round(2) }}</p>
+            <p><strong>Nonce:</strong> {{ block.nonce }}</p>
+            <p><strong>Difficulty:</strong> {{ block.difficulty }}</p>
+            <p><strong>Prev Hash:</strong> <code>{{ block.prev_hash }}...</code></p>
+            <p><strong>Hash:</strong> <code>{{ block.hash }}</code></p>
+        </div>
+        {% endfor %}
     </div>
-    {% endfor %}
 </body>
 </html>

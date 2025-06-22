@@ -32,6 +32,42 @@ if exist "requirements.txt" (
     echo ❌ No requirements.txt found in root directory.
 )
 
+REM Compile and migrate Truffle contracts for lab24_27
+echo 🔧 Compiling and migrating Truffle contracts for lab24_27...
+if exist "blockchain-labs\lab24_27" (
+    cd /d "blockchain-labs\lab24_27"
+    where truffle >nul 2>&1
+    if !errorlevel! equ 0 (
+        echo 📦 Running truffle compile...
+        truffle compile
+        echo 🚀 Running truffle migrate...
+        truffle migrate
+    ) else (
+        echo ❌ Truffle not found. Please install truffle first.
+    )
+    cd /d "%~dp0"
+) else (
+    echo ❌ Directory blockchain-labs\lab24_27 does not exist, skipping.
+)
+
+REM Compile and migrate Truffle contracts for lab28
+echo 🔧 Compiling and migrating Truffle contracts for lab28...
+if exist "blockchain-labs\lab28" (
+    cd /d "blockchain-labs\lab28"
+    where truffle >nul 2>&1
+    if !errorlevel! equ 0 (
+        echo 📦 Running truffle compile...
+        truffle compile
+        echo 🚀 Running truffle migrate...
+        truffle migrate
+    ) else (
+        echo ❌ Truffle not found. Please install truffle first.
+    )
+    cd /d "%~dp0"
+) else (
+    echo ❌ Directory blockchain-labs\lab28 does not exist, skipping.
+)
+
 echo ✅ Setup complete!
 echo 💡 To activate the virtual environment in the future, run: .venv\Scripts\activate.bat
 pause 

@@ -17,8 +17,8 @@ app = FastAPI(title="VC + SMTP OTP Authentication")
 
 SMTP_SERVER = "smtp.gmail.com"
 SMTP_PORT = 587
-SMTP_USERNAME = "<enter here>"
-SMTP_PASSWORD = "<enter here>"
+SMTP_USERNAME = "niranjhansu@gmail.com"
+SMTP_PASSWORD = ""
 
 users_db = {}
 otp_store = {}
@@ -271,4 +271,4 @@ app.add_middleware(
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8001) 
+    uvicorn.run(app, host="0.0.0.0", port=5000) 
