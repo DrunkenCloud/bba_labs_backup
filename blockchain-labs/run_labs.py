@@ -29,31 +29,33 @@ class BlockchainLabsRunner:
     def list_labs(self):
         self.print_header("BLOCKCHAIN LABS - AVAILABLE OPTIONS")
         print()
-        print("Python Files:")
+        print("Labs:")
         print("-" * 80)
-        
-        # List Python files
-        py_files = glob.glob("*.py")
-        if py_files:
-            for py_file in sorted(py_files):
-                name = Path(py_file).stem
-                print(f"   - {name}")
-        else:
-            print("   No Python files found in current directory")
-
-        print()
-        print("Lab Directories:")
-        print("-" * 80)
-        
-        # List lab directories
-        lab_dirs = glob.glob("lab*")
-        lab_dirs = [d for d in lab_dirs if Path(d).is_dir()]
-        if lab_dirs:
-            for lab_dir in sorted(lab_dirs):
-                print(f"   - {lab_dir}")
-        else:
-            print("   No lab directories found")
-
+        print(" 1:   Hash a Test")
+        print(" 2:   Hash a file")
+        print(" 3:   Working RSA Math Model")
+        print(" 4:   RSA Ecrypt and Decrypt")
+        print(" 5:   Signing a Message")
+        print(" 6:   LinkedList in Python using OOPS")
+        print(" 7:   Sample Block in a Blockchain using Python OOPS")
+        print(" 8:   Sample Blockchain Object in Python")
+        print(" 9:   Mining a Block in a Blockchain")
+        print("10:   Menu Based Blockchain Code")
+        print("11:   Blockchain Web UI with Difficulty")
+        print("12:   Distributed Blockchain Nodes")
+        print("13:   Blockchain Consensus Demo")
+        print("14:   Simple Auth Program")
+        print("15:   Simple Auth with Hashed Passwords")
+        print("16:   Storing User Data")
+        print("17:   Authentication via Session ID")
+        print("18:   Authentication via JWT Token")
+        print("19:   Flask Authentication Demo")
+        print("20:   Shamir Secret Sharing Demo")
+        print("24:   Solidity Contract Demo 1")
+        print("25:   Solidity Contract Demo 2")
+        print("26:   Solidity Contract Demo 3")
+        print("27:   Solidity Contract Demo 4")
+        print("28:   Fullstack Blockchain DApp")
         self.print_separator()
         print(f"Current directory: {self.current_dir}")
         print()

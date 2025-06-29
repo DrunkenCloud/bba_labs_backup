@@ -14,9 +14,9 @@ interface OtpAuthProps {
 }
 
 export function OtpAuth({ onAuthAction }: OtpAuthProps) {
-  const [otpMode, setOtpMode] = useState("send") // "send" or "verify"
+  const [otpMode, setOtpMode] = useState("send")
   const [email, setEmail] = useState("")
-  const [authType, setAuthType] = useState<"login" | "signup">("login")
+  const [authType, setAuthType] = useState<"login" | "signup">("signup")
   const { toast } = useToast()
 
   const handleSendOtp = async (formData: FormData) => {
@@ -108,49 +108,9 @@ export function OtpAuth({ onAuthAction }: OtpAuthProps) {
   return (
     <Tabs value={authType} onValueChange={(value) => setAuthType(value as "login" | "signup")}>
       <TabsList className="grid w-full grid-cols-2 mb-6">
-        <TabsTrigger value="login">OTP Login</TabsTrigger>
         <TabsTrigger value="signup">OTP Signup</TabsTrigger>
+        <TabsTrigger value="login">OTP Login</TabsTrigger>
       </TabsList>
-
-      <TabsContent value="login" className="space-y-4">
-        <form action={handleSendOtp} className="space-y-4">
-          <input type="hidden" name="authType" value="login" />
-          <div className="space-y-2">
-            <Label htmlFor="email-login" className="flex items-center gap-2">
-              <Mail className="w-4 h-4" />
-              Email Address
-            </Label>
-            <Input
-              id="email-login"
-              name="email"
-              type="email"
-              placeholder="john@example.com"
-              className="h-11"
-              required
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="password-otp-login" className="flex items-center gap-2">
-              <Lock className="w-4 h-4" />
-              Password
-            </Label>
-            <Input
-              id="password-otp-login"
-              name="password"
-              type="password"
-              placeholder="Enter your password"
-              className="h-11"
-              required
-            />
-          </div>
-          <Button
-            type="submit"
-            className="w-full h-11 bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600"
-          >
-            Send Login OTP
-          </Button>
-        </form>
-      </TabsContent>
 
       <TabsContent value="signup" className="space-y-4">
         <form action={handleSendOtp} className="space-y-4">
@@ -188,6 +148,46 @@ export function OtpAuth({ onAuthAction }: OtpAuthProps) {
             className="w-full h-11 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600"
           >
             Send Signup OTP
+          </Button>
+        </form>
+      </TabsContent>
+
+      <TabsContent value="login" className="space-y-4">
+        <form action={handleSendOtp} className="space-y-4">
+          <input type="hidden" name="authType" value="login" />
+          <div className="space-y-2">
+            <Label htmlFor="email-login" className="flex items-center gap-2">
+              <Mail className="w-4 h-4" />
+              Email Address
+            </Label>
+            <Input
+              id="email-login"
+              name="email"
+              type="email"
+              placeholder="john@example.com"
+              className="h-11"
+              required
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="password-otp-login" className="flex items-center gap-2">
+              <Lock className="w-4 h-4" />
+              Password
+            </Label>
+            <Input
+              id="password-otp-login"
+              name="password"
+              type="password"
+              placeholder="Enter your password"
+              className="h-11"
+              required
+            />
+          </div>
+          <Button
+            type="submit"
+            className="w-full h-11 bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600"
+          >
+            Send Login OTP
           </Button>
         </form>
       </TabsContent>

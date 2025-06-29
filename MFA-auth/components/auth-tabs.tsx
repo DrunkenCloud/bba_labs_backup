@@ -17,7 +17,7 @@ interface AuthTabsProps {
 
 export function AuthTabs({ onAuthAction }: AuthTabsProps) {
   const [activeTab, setActiveTab] = useState("password")
-  const [passwordAuthMode, setPasswordAuthMode] = useState("login")
+  const [passwordAuthMode, setPasswordAuthMode] = useState("signup")
   const { toast } = useToast()
 
   const handleSignup = async (formData: FormData) => {
@@ -69,40 +69,9 @@ export function AuthTabs({ onAuthAction }: AuthTabsProps) {
             <CardContent>
               <Tabs value={passwordAuthMode} onValueChange={setPasswordAuthMode}>
                 <TabsList className="grid w-full grid-cols-2 mb-6">
-                  <TabsTrigger value="login">Login</TabsTrigger>
                   <TabsTrigger value="signup">Sign Up</TabsTrigger>
+                  <TabsTrigger value="login">Login</TabsTrigger>
                 </TabsList>
-
-                <TabsContent value="login">
-                  <form action={handleLogin} className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="usernameOrEmail" className="flex items-center gap-2">
-                        <User className="w-4 h-4" />
-                        Username or Email
-                      </Label>
-                      <Input
-                        id="usernameOrEmail"
-                        name="usernameOrEmail"
-                        placeholder="john.doe or john@example.com"
-                        className="h-11"
-                        required
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="password" className="flex items-center gap-2">
-                        <Lock className="w-4 h-4" />
-                        Password
-                      </Label>
-                      <Input id="password" name="password" type="password" className="h-11" required />
-                    </div>
-                    <Button
-                      type="submit"
-                      className="w-full h-11 bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600"
-                    >
-                      Sign In
-                    </Button>
-                  </form>
-                </TabsContent>
 
                 <TabsContent value="signup">
                   <form action={handleSignup} className="space-y-4">
@@ -146,6 +115,37 @@ export function AuthTabs({ onAuthAction }: AuthTabsProps) {
                       className="w-full h-11 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600"
                     >
                       Create Account
+                    </Button>
+                  </form>
+                </TabsContent>
+
+                <TabsContent value="login">
+                  <form action={handleLogin} className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="usernameOrEmail" className="flex items-center gap-2">
+                        <User className="w-4 h-4" />
+                        Username or Email
+                      </Label>
+                      <Input
+                        id="usernameOrEmail"
+                        name="usernameOrEmail"
+                        placeholder="john.doe or john@example.com"
+                        className="h-11"
+                        required
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="password" className="flex items-center gap-2">
+                        <Lock className="w-4 h-4" />
+                        Password
+                      </Label>
+                      <Input id="password" name="password" type="password" className="h-11" required />
+                    </div>
+                    <Button
+                      type="submit"
+                      className="w-full h-11 bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600"
+                    >
+                      Sign In
                     </Button>
                   </form>
                 </TabsContent>
