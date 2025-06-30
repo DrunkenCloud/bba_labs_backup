@@ -7,11 +7,12 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
-import { CheckCircle, XCircle, Trophy, User, Shield, Key } from "lucide-react"
+import { CheckCircle, XCircle, Trophy, User, Shield, Key, Info } from "lucide-react"
 import { VCCreatorTool } from "@/components/vc-creator-tool"
 import { CryptoVerification } from "@/components/crypto-verification"
-import { DUMMY_DATA, getRandomItem } from "@/lib/dummy-data"
+import { DUMMY_DATA, CREDENTIAL_TYPES, getRandomItem, generateRandomDate } from "@/lib/dummy-data"
 import { VigenereCipher } from "@/lib/vigenere-cipher"
+import { VCCreator } from "@/lib/vc-creator"
 
 // Trusted issuers list (global)
 const TRUSTED_ISSUERS = [
@@ -25,6 +26,7 @@ interface Challenge {
   type: "creation" | "verification"
   data: any
   solution?: any
+  credentialType?: string
 }
 
 interface GameState {
@@ -58,44 +60,99 @@ export default function VCGame() {
     return result
   }
 
-  // Generate creation challenge with simplified data (5-6 fields)
+  // Generate creation challenge with specific credential type
   const generateCreationChallenge = (): Challenge => {
     const holderDID = generateDID()
     const issuerDID = TRUSTED_ISSUERS[Math.floor(Math.random() * TRUSTED_ISSUERS.length)]
 
-    // Only 5-6 key fields, each randomly selected from 20-30 options
-    const challengeData = {
+    // Randomly select credential type
+    const credentialTypeKeys = Object.keys(CREDENTIAL_TYPES) as Array<keyof typeof CREDENTIAL_TYPES>
+    const selectedType = getRandomItem(credentialTypeKeys)
+    const credentialInfo = CREDENTIAL_TYPES[selectedType]
+
+    let challengeData: any = {
       holderDID,
       issuerDID,
       name: getRandomItem(DUMMY_DATA.names),
-      profession: getRandomItem(DUMMY_DATA.professions),
-      dateOfBirth: getRandomItem(DUMMY_DATA.dateOfBirth),
-      company: getRandomItem(DUMMY_DATA.companies),
-      location: getRandomItem(DUMMY_DATA.locations),
-      salary: getRandomItem(DUMMY_DATA.salaries),
     }
 
-    const solution = {
-      "@context": ["https://www.w3.org/2018/credentials/v1"],
-      type: ["VerifiableCredential", "EmploymentCredential"],
-      issuer: issuerDID,
-      issuanceDate: new Date().toISOString(),
-      credentialSubject: {
-        id: holderDID,
-        name: challengeData.name,
-        profession: challengeData.profession,
-        dateOfBirth: challengeData.dateOfBirth,
-        company: challengeData.company,
-        location: challengeData.location,
-        salary: challengeData.salary,
-      },
+    // Generate data based on credential type
+    switch (selectedType) {
+      case "employment":
+        challengeData = {
+          ...challengeData,
+          jobTitle: getRandomItem(DUMMY_DATA.jobTitles),
+          company: getRandomItem(DUMMY_DATA.companies),
+          department: getRandomItem(DUMMY_DATA.departments),
+          startDate: generateRandomDate(2020, 2024),
+          salary: getRandomItem(DUMMY_DATA.salaries),
+        }
+        break
+
+      case "education":
+        challengeData = {
+          ...challengeData,
+          degree: getRandomItem(DUMMY_DATA.degrees),
+          institution: getRandomItem(DUMMY_DATA.institutions),
+          graduationDate: generateRandomDate(2015, 2024),
+          major: getRandomItem(DUMMY_DATA.majors),
+          gpa: getRandomItem(DUMMY_DATA.gpas),
+        }
+        break
+
+      case "identity":
+        challengeData = {
+          ...challengeData,
+          dateOfBirth: generateRandomDate(1970, 2000),
+          nationality: getRandomItem(DUMMY_DATA.nationalities),
+          address: getRandomItem(DUMMY_DATA.addresses),
+          idNumber: getRandomItem(DUMMY_DATA.idNumbers),
+          issueDate: generateRandomDate(2020, 2024),
+        }
+        break
+
+      case "license":
+        challengeData = {
+          ...challengeData,
+          licenseType: getRandomItem(DUMMY_DATA.licenseTypes),
+          licenseNumber: getRandomItem(DUMMY_DATA.licenseNumbers),
+          issuingAuthority: getRandomItem(DUMMY_DATA.issuingAuthorities),
+          issueDate: generateRandomDate(2020, 2024),
+          expirationDate: generateRandomDate(2025, 2030),
+        }
+        break
+
+      case "membership":
+        challengeData = {
+          ...challengeData,
+          organizationName: getRandomItem(DUMMY_DATA.organizationNames),
+          membershipType: getRandomItem(DUMMY_DATA.membershipTypes),
+          membershipNumber: getRandomItem(DUMMY_DATA.membershipNumbers),
+          joinDate: generateRandomDate(2018, 2024),
+          membershipLevel: getRandomItem(DUMMY_DATA.membershipLevels),
+        }
+        break
     }
+
+    // Only pass the fields that would be on the form (exclude holderDID, issuerDID)
+    const claims = Object.fromEntries(
+      Object.entries(challengeData).filter(([key]) => !["holderDID", "issuerDID"].includes(key))
+    )
+
+    // Use VCCreator.createVC to generate the solution
+    const solution = VCCreator.createVC({
+      issuerDID,
+      subjectDID: holderDID,
+      credentialType: selectedType,
+      claims,
+    })
 
     return {
       id: `creation-${Date.now()}`,
       type: "creation",
       data: challengeData,
       solution,
+      credentialType: selectedType,
     }
   }
 
@@ -116,9 +173,9 @@ export default function VCGame() {
       credentialSubject: {
         id: subjectDID,
         name: getRandomItem(DUMMY_DATA.names),
-        profession: getRandomItem(DUMMY_DATA.professions),
+        jobTitle: getRandomItem(DUMMY_DATA.jobTitles),
         company: getRandomItem(DUMMY_DATA.companies),
-        dateOfBirth: getRandomItem(DUMMY_DATA.dateOfBirth),
+        dateOfBirth: generateRandomDate(1980, 2000),
       },
     }
 
@@ -133,13 +190,14 @@ export default function VCGame() {
     const vcHash = VigenereCipher.generateHash(vcData)
     const vpHash = VigenereCipher.generateHash(vpData)
 
-    // Create a signing DID for this challenge
-    const signingDID = generateDID()
-    const cipherKey = signingDID.replace("did:key:", "").slice(0, 10)
+    // Use issuerDID for VC signature, holderDID for VP signature
+    const vcCipherKey = issuerDID.replace("did:key:", "").slice(0, 10)
+    const vpCipherKey = holderDID.replace("did:key:", "").slice(0, 10)
 
     // Sometimes corrupt the signatures to make them invalid
-    const vcSignatureValid = Math.random() > 0.3
-    const vpSignatureValid = Math.random() > 0.3
+    const vcSignatureValid = Math.random() > 0.2
+    const vpSignatureValid = Math.random() > 0.2
+    console.log(vcSignatureValid, vpSignatureValid);
 
     let vcSignatureToEncode = vcHash
     let vpSignatureToEncode = vpHash
@@ -164,8 +222,8 @@ export default function VCGame() {
       vpSignatureToEncode = chars.join("")
     }
 
-    const encodedVCSignature = VigenereCipher.encode(vcSignatureToEncode, cipherKey)
-    const encodedVPSignature = VigenereCipher.encode(vpSignatureToEncode, cipherKey)
+    const encodedVCSignature = VigenereCipher.encode(vcSignatureToEncode, vcCipherKey)
+    const encodedVPSignature = VigenereCipher.encode(vpSignatureToEncode, vpCipherKey)
 
     return {
       id: `verification-${Date.now()}`,
@@ -175,7 +233,6 @@ export default function VCGame() {
         vpData,
         vcSignature: encodedVCSignature,
         vpSignature: encodedVPSignature,
-        signingDID,
       },
       solution: {
         cryptoValid: vcSignatureValid && vpSignatureValid,
@@ -205,19 +262,40 @@ export default function VCGame() {
 
     try {
       const userVC = JSON.parse(userInput)
-      const solution = gameState.currentChallenge.solution
+      const challenge = gameState.currentChallenge
+      const challengeData = challenge.data
+      const credentialType = challenge.credentialType
+      const issuerDID = challengeData.issuerDID
+      const subjectDID = challengeData.holderDID
+      const claims = Object.fromEntries(
+        Object.entries(challengeData).filter(([key]) => !["holderDID", "issuerDID"].includes(key))
+      )
 
-      // Check if the structure matches (simplified check for 6 key fields)
-      const isCorrect =
-        userVC.issuer === solution.issuer &&
-        userVC.credentialSubject?.id === solution.credentialSubject.id &&
-        userVC.credentialSubject?.name === solution.credentialSubject.name &&
-        userVC.credentialSubject?.profession === solution.credentialSubject.profession &&
-        userVC.credentialSubject?.dateOfBirth === solution.credentialSubject.dateOfBirth &&
-        userVC.credentialSubject?.company === solution.credentialSubject.company &&
-        userVC.credentialSubject?.location === solution.credentialSubject.location &&
-        userVC.credentialSubject?.salary === solution.credentialSubject.salary &&
-        userVC.type?.includes("VerifiableCredential")
+      // Recreate the expected VC using the same logic as the challenge
+      const expectedVC = VCCreator.createVC({
+        issuerDID,
+        subjectDID,
+        credentialType,
+        claims,
+      })
+
+      // Compare userVC and expectedVC (ignoring issuanceDate and proof fields)
+      const stripFields = (vc: any) => {
+        const { issuanceDate, proof, ...rest } = vc
+        return {
+          ...rest,
+          credentialSubject: { ...vc.credentialSubject },
+        }
+      }
+      const userVCStripped = stripFields(userVC)
+      const expectedVCStripped = stripFields(expectedVC)
+      // Remove issuanceDate and proof from credentialSubject if present
+      delete userVCStripped.credentialSubject.issuanceDate
+      delete userVCStripped.credentialSubject.proof
+      delete expectedVCStripped.credentialSubject.issuanceDate
+      delete expectedVCStripped.credentialSubject.proof
+
+      const isCorrect = JSON.stringify(userVCStripped) === JSON.stringify(expectedVCStripped)
 
       const points = isCorrect ? 15 : 0
       setGameState((prev) => ({
@@ -308,7 +386,7 @@ export default function VCGame() {
           <CardContent>
             <div className="space-y-2">
               {TRUSTED_ISSUERS.map((did, index) => (
-                <div key={index} className="font-mono text-sm bg-green-50 p-2 rounded border">
+                <div key={index} className="font-mono text-sm bg-green-50 p-2 rounded border overflow-x-auto">
                   {did}
                 </div>
               ))}
@@ -343,62 +421,48 @@ export default function VCGame() {
                 <CardContent className="space-y-4">
                   {gameState.currentChallenge.type === "creation" ? (
                     <div className="space-y-4">
-                      <div>
-                        <Label className="text-sm font-semibold">Task:</Label>
-                        <p className="text-sm text-gray-600 mt-1">
-                          Create a Verifiable Credential with the following information:
+                      {/* Credential Type Info */}
+                      <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Info className="h-4 w-4 text-blue-600" />
+                          <Label className="text-sm font-semibold text-blue-800">Credential Type Required:</Label>
+                        </div>
+                        <p className="text-sm text-blue-700">
+                          Create a{" "}
+                          <strong>
+                            {
+                              CREDENTIAL_TYPES[
+                                gameState.currentChallenge.credentialType as keyof typeof CREDENTIAL_TYPES
+                              ]?.name
+                            }
+                          </strong>{" "}
+                          with the following information:
                         </p>
                       </div>
 
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                           <Label className="text-xs text-gray-500">Holder DID:</Label>
-                          <div className="font-mono text-sm bg-gray-50 p-2 rounded border">
+                          <div className="font-mono text-sm bg-gray-50 p-2 rounded border overflow-x-auto max-w-full">
                             {gameState.currentChallenge.data.holderDID}
                           </div>
                         </div>
                         <div>
                           <Label className="text-xs text-gray-500">Issuer DID:</Label>
-                          <div className="font-mono text-sm bg-gray-50 p-2 rounded border">
+                          <div className="font-mono text-sm bg-gray-50 p-2 rounded border overflow-x-auto max-w-full">
                             {gameState.currentChallenge.data.issuerDID}
                           </div>
                         </div>
-                        <div>
-                          <Label className="text-xs text-gray-500">Name:</Label>
-                          <div className="text-sm bg-gray-50 p-2 rounded border">
-                            {gameState.currentChallenge.data.name}
-                          </div>
-                        </div>
-                        <div>
-                          <Label className="text-xs text-gray-500">Profession:</Label>
-                          <div className="text-sm bg-gray-50 p-2 rounded border">
-                            {gameState.currentChallenge.data.profession}
-                          </div>
-                        </div>
-                        <div>
-                          <Label className="text-xs text-gray-500">Date of Birth:</Label>
-                          <div className="text-sm bg-gray-50 p-2 rounded border">
-                            {gameState.currentChallenge.data.dateOfBirth}
-                          </div>
-                        </div>
-                        <div>
-                          <Label className="text-xs text-gray-500">Company:</Label>
-                          <div className="text-sm bg-gray-50 p-2 rounded border">
-                            {gameState.currentChallenge.data.company}
-                          </div>
-                        </div>
-                        <div>
-                          <Label className="text-xs text-gray-500">Location:</Label>
-                          <div className="text-sm bg-gray-50 p-2 rounded border">
-                            {gameState.currentChallenge.data.location}
-                          </div>
-                        </div>
-                        <div>
-                          <Label className="text-xs text-gray-500">Salary:</Label>
-                          <div className="text-sm bg-gray-50 p-2 rounded border">
-                            ${gameState.currentChallenge.data.salary}
-                          </div>
-                        </div>
+                        {Object.entries(gameState.currentChallenge.data)
+                          .filter(([key]) => !["holderDID", "issuerDID"].includes(key))
+                          .map(([key, value]) => (
+                            <div key={key}>
+                              <Label className="text-xs text-gray-500 capitalize">
+                                {key.replace(/([A-Z])/g, " $1").trim()}:
+                              </Label>
+                              <div className="text-sm bg-gray-50 p-2 rounded border">{String(value)}</div>
+                            </div>
+                          ))}
                       </div>
 
                       <div>
@@ -407,13 +471,17 @@ export default function VCGame() {
                           id="vc-input"
                           value={userInput}
                           onChange={(e) => setUserInput(e.target.value)}
-                          placeholder="Enter your VC JSON here..."
+                          placeholder={`Enter your ${CREDENTIAL_TYPES[gameState.currentChallenge.credentialType as keyof typeof CREDENTIAL_TYPES]?.name} JSON here...`}
                           className="font-mono text-sm h-60"
                         />
                       </div>
 
                       <Button onClick={submitCreation} className="w-full">
-                        Submit VC
+                        Submit{" "}
+                        {
+                          CREDENTIAL_TYPES[gameState.currentChallenge.credentialType as keyof typeof CREDENTIAL_TYPES]
+                            ?.name
+                        }
                       </Button>
 
                       {showSolution && (
