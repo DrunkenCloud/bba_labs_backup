@@ -412,9 +412,7 @@ export default function BlockchainSimulator() {
                     <div className="p-4 bg-gray-50 rounded-lg">
                       <p className="font-medium text-gray-900">{currentRequest.description}</p>
                       <div className="mt-2 text-sm text-gray-600">
-                        <p>
                           Type: <Badge variant="outline">{currentRequest.type}</Badge>
-                        </p>
                         {currentRequest.contractName && (
                           <p>
                             Contract: <code className="bg-gray-200 px-1 rounded">{currentRequest.contractName}</code>

@@ -23,7 +23,19 @@ def login(username, password):
     result = contract.functions.login(username, password).call()
     print("Login success ✅" if result else "Login failed ❌")
 
-# Test
-register("alice", "pass123")
-login("alice", "pass123")
-login("alice", "wrongpass")
+
+while True:
+    print("What do you want to do: \n1) Register\n2) Login\n 3) Exit\n")
+    choice = int(input("Input your Choice here: "))
+    if choice == 1:
+        username = input()
+        password = input()
+        register(username, password)
+    elif choice == 2:
+        username = input()
+        password = input()
+        login(username, password)
+    elif choice == 3:
+        exit()
+    else:
+        print("Invalid Input")

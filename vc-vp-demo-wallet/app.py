@@ -224,9 +224,6 @@ async def get_issuer_info():
 
 from fastapi.middleware.cors import CORSMiddleware
 origins = [
-    "http://localhost", # If serving via a simple web server like http-server
-    "http://localhost:8000", # If your client is also at 8000
-    "null", # For file:// access in some browsers, but not recommended for production
     "*"
 ]
 
