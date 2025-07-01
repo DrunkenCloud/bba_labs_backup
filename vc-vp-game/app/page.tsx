@@ -495,6 +495,29 @@ export default function VCGame() {
                     </div>
                   ) : (
                     <div className="space-y-4">
+                      {/* Show the Verifiable Presentation and signatures as a combined object */}
+                      {(() => {
+                        const vpData = gameState.currentChallenge.data.vpData
+                        const vcSignature = gameState.currentChallenge.data.vcSignature
+                        const vpSignature = gameState.currentChallenge.data.vpSignature
+                        // Deep clone vpData to avoid mutating original
+                        const vpWithSignatures = JSON.parse(JSON.stringify(vpData))
+                        if (vpWithSignatures.verifiableCredential && vpWithSignatures.verifiableCredential[0]) {
+                          vpWithSignatures.verifiableCredential[0].vcSignature = vcSignature
+                        }
+                        vpWithSignatures.vpSignature = vpSignature
+                        return (
+                          <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                            <div className="flex items-center gap-2 mb-2">
+                              <Info className="h-4 w-4 text-blue-600" />
+                              <Label className="text-sm font-semibold text-blue-800">Verifiable Presentation:</Label>
+                            </div>
+                            <pre className="text-xs bg-white p-2 rounded border overflow-auto max-h-60 mb-2">
+                              {JSON.stringify(vpWithSignatures, null, 2)}
+                            </pre>
+                          </div>
+                        )
+                      })()}
                       {!verificationResults ? (
                         <CryptoVerification
                           vcData={gameState.currentChallenge.data.vcData}
