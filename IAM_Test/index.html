@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auth0 + Ganache IAM Demo</title>
+    <script src="https://cdn.auth0.com/js/auth0/9.22.1/auth0.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/web3/1.8.2/web3.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .section {
+            margin: 20px 0;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background: #f9f9f9;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 5px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        .user-info {
+            background: #e2e3e5;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .transaction-log {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        .hidden {
+            display: none;
+        }
+        pre {
+            background: #f4f4f4;
+            padding: 10px;
+            border-radius: 5px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔐 Auth0 + Ganache IAM Demo</h1>
+        
+        <div class="section">
+            <h3>📋 Setup Instructions</h3>
+            <p><strong>1. Configure Auth0:</strong></p>
+            <ul>
+                <li>Replace AUTH0_DOMAIN and AUTH0_CLIENT_ID in the code below</li>
+                <li>Set callback URL to: <code>http://localhost:3000/</code></li>
+            </ul>
+            <p><strong>2. Start Ganache:</strong></p>
+            <pre>ganache-cli --deterministic --accounts 10 --host 0.0.0.0 --port 7545</pre>
+        </div>
+
+        <div class="section">
+            <h3>🔑 Authentication Status</h3>
+            <div id="auth-status" class="status info">Not authenticated</div>
+            <div id="user-info" class="user-info hidden"></div>
+            <button id="login-btn" onclick="login()">Login with Auth0</button>
+            <button id="logout-btn" onclick="logout()" class="hidden">Logout</button>
+        </div>
+
+        <div class="section">
+            <h3>⛓️ Blockchain Connection</h3>
+            <div id="blockchain-status" class="status info">Not connected</div>
+            <button id="connect-blockchain" onclick="connectBlockchain()">Connect to Ganache</button>
+            <div id="blockchain-info" class="hidden"></div>
+        </div>
+
+        <div class="section">
+            <h3>📝 Access Logging</h3>
+            <p>When authenticated, your access events will be logged to the blockchain:</p>
+            <button id="log-access" onclick="logAccess()" disabled>Log Access Event</button>
+            <button id="view-logs" onclick="viewLogs()" disabled>View Access Logs</button>
+            <div id="transaction-log" class="transaction-log hidden"></div>
+        </div>
+
+        <div class="section">
+            <h3>🔍 Audit Trail</h3>
+            <p>Query blockchain for access history:</p>
+            <button id="query-audit" onclick="queryAuditTrail()" disabled>Query Audit Trail</button>
+            <div id="audit-results" class="hidden"></div>
+        </div>
+    </div>
+
+    <script>
+        // Auth0 Configuration - REPLACE WITH YOUR VALUES
+        const AUTH0_DOMAIN = 'dev-dasdas.us.auth0.com';
+        const AUTH0_CLIENT_ID = 'adsdasda';
+        const CONTRACT_ADDRESS = '3123312';
+        
+        // Initialize Auth0 - wait for library to load
+        let auth0Client;
+        
+        function initializeAuth0() {
+            if (typeof auth0 !== 'undefined') {
+                auth0Client = new auth0.WebAuth({
+                    domain: AUTH0_DOMAIN,
+                    clientID: AUTH0_CLIENT_ID,
+                    redirectUri: window.location.origin,
+                    responseType: 'token id_token',
+                    scope: 'openid profile email'
+                });
+                return true;
+            }
+            return false;
+        }
+
+        // Web3 and blockchain variables
+        let web3;
+        let accounts;
+        let currentUser = null;
+        let accessLogContract;
+        
+        // Remove hardcoded ABI and bytecode
+        // const contractABI = [...];
+        // const contractBytecode = "...";
+        let contractABI;
+        let contractBytecode;
+        
+        // Utility to load JSON file
+        async function loadContractArtifact() {
+            const response = await fetch('build/contracts/AccessLogger.json');
+            const artifact = await response.json();
+            contractABI = artifact.abi;
+            contractBytecode = artifact.bytecode;
+        }
+
+        // Check if we're coming back from Auth0
+        function handleAuthCallback() {
+            if (window.location.hash && auth0Client) {
+                auth0Client.parseHash((err, authResult) => {
+                    if (authResult && authResult.accessToken && authResult.idToken) {
+                        window.location.hash = '';
+                        setSession(authResult);
+                        displayUserInfo(authResult);
+                    } else if (err) {
+                        updateStatus('auth-status', 'Authentication error: ' + err.error_description, 'error');
+                    }
+                });
+            }
+        }
+
+        function login() {
+            if (!auth0Client) {
+                if (!initializeAuth0()) {
+                    updateStatus('auth-status', 'Auth0 library not loaded yet. Please wait...', 'error');
+                    return;
+                }
+            }
+            auth0Client.authorize({
+                prompt: 'login'
+            });
+        }
+
+        function logout() {
+            localStorage.removeItem('access_token');
+            localStorage.removeItem('id_token');
+            localStorage.removeItem('expires_at');
+            currentUser = null;
+            
+            document.getElementById('login-btn').classList.remove('hidden');
+            document.getElementById('logout-btn').classList.add('hidden');
+            document.getElementById('user-info').classList.add('hidden');
+            updateStatus('auth-status', 'Not authenticated', 'info');
+            
+            // Disable blockchain buttons
+            document.getElementById('log-access').disabled = true;
+            document.getElementById('view-logs').disabled = true;
+            document.getElementById('query-audit').disabled = true;
+        }
+
+        function setSession(authResult) {
+            const expiresAt = JSON.stringify(authResult.expiresIn * 1000 + new Date().getTime());
+            localStorage.setItem('access_token', authResult.accessToken);
+            localStorage.setItem('id_token', authResult.idToken);
+            localStorage.setItem('expires_at', expiresAt);
+        }
+
+        function displayUserInfo(authResult) {
+            const payload = JSON.parse(atob(authResult.idToken.split('.')[1]));
+            currentUser = payload;
+            
+            updateStatus('auth-status', 'Successfully authenticated!', 'success');
+            
+            const userInfo = document.getElementById('user-info');
+            userInfo.innerHTML = `
+                <h4>User Information:</h4>
+                <p><strong>Email:</strong> ${payload.email}</p>
+                <p><strong>Name:</strong> ${payload.name}</p>
+                <p><strong>User ID:</strong> ${payload.sub}</p>
+            `;
+            userInfo.classList.remove('hidden');
+            
+            document.getElementById('login-btn').classList.add('hidden');
+            document.getElementById('logout-btn').classList.remove('hidden');
+            
+            // Enable blockchain buttons if connected
+            if (web3) {
+                document.getElementById('log-access').disabled = false;
+                document.getElementById('view-logs').disabled = false;
+                document.getElementById('query-audit').disabled = false;
+            }
+        }
+
+
+        async function connectBlockchain() {
+            try {
+                web3 = new Web3('http://localhost:7545');
+                accounts = await web3.eth.getAccounts();
+
+                updateStatus('blockchain-status', 'Connected to Ganache!', 'success');
+                const blockchainInfo = document.getElementById('blockchain-info');
+                blockchainInfo.innerHTML = `
+                    <h4>Blockchain Information:</h4>
+                    <p><strong>Network:</strong> Ganache (Local)</p>
+                    <p><strong>Accounts:</strong> ${accounts.length}</p>
+                    <p><strong>Your Address:</strong> ${accounts[0]}</p>
+                `;
+                blockchainInfo.classList.remove('hidden');
+
+                await loadContractArtifact();
+                // Instead of deploying, connect to the existing contract:
+                accessLogContract = new web3.eth.Contract(contractABI, CONTRACT_ADDRESS);
+
+                // Enable buttons if authenticated
+                if (currentUser) {
+                    document.getElementById('log-access').disabled = false;
+                    document.getElementById('view-logs').disabled = false;
+                    document.getElementById('query-audit').disabled = false;
+                }
+            } catch (error) {
+                updateStatus('blockchain-status', 'Failed to connect: ' + error.message, 'error');
+            }
+        }
+
+        async function logAccess() {
+            if (!currentUser || !accessLogContract) return;
+            
+            try {
+                const userId = currentUser.sub;
+                const action = 'page_access';
+                const timestamp = Math.floor(Date.now() / 1000);
+                
+                const result = await accessLogContract.methods.logAccess(userId, action, timestamp).send({
+                    from: accounts[0],
+                    gas: 200000
+                });
+                
+                updateStatus('blockchain-status', `Access logged! TX: ${result.transactionHash}`, 'success');
+                
+            } catch (error) {
+                updateStatus('blockchain-status', 'Failed to log access: ' + error.message, 'error');
+            }
+        }
+
+        async function viewLogs() {
+            if (!accessLogContract) return;
+            
+            try {
+                const logCount = await accessLogContract.methods.getLogCount().call();
+                const logDiv = document.getElementById('transaction-log');
+
+                logDiv.innerHTML = `<h4>Access Logs (${logCount} total):</h4>`;
+
+                for (let i = logCount - 1; i >= 0; i--) {
+                    const log = await accessLogContract.methods.getLog(i).call();
+                    const userId = log[0];
+                    const action = log[1];
+                    const timestamp = new Date(parseInt(log[2]) * 1000).toLocaleString(); // assuming UNIX timestamp in seconds
+
+                    logDiv.innerHTML += `
+                        <div style="border: 1px solid #ddd; padding: 10px; margin: 5px 0; border-radius: 5px;">
+                            <strong>Log ${i + 1}:</strong><br>
+                            User: ${userId}<br>
+                            Action: ${action}<br>
+                            Time: ${timestamp}
+                        </div>
+                    `;
+                }
+
+                logDiv.classList.remove('hidden');
+
+            } catch (error) {
+                updateStatus('blockchain-status', 'Failed to fetch logs: ' + error.message, 'error');
+            }
+        }
+
+        async function queryAuditTrail() {
+            if (!currentUser) return;
+            
+            const auditResults = document.getElementById('audit-results');
+            auditResults.innerHTML = `
+                <h4>Audit Trail for User: ${currentUser.email}</h4>
+                <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin: 10px 0;">
+                    <h5>Blockchain Verification:</h5>
+                    <p>✅ User identity verified via Auth0</p>
+                    <p>✅ Access events immutably stored on blockchain</p>
+                    <p>✅ Cryptographic proof of access history</p>
+                    <p>✅ Tamper-proof audit trail</p>
+                    
+                    <h5>Security Benefits:</h5>
+                    <ul>
+                        <li>Decentralized identity verification</li>
+                        <li>Immutable access logs</li>
+                        <li>Cryptographic integrity</li>
+                        <li>Transparent audit trail</li>
+                    </ul>
+                </div>
+            `;
+            auditResults.classList.remove('hidden');
+        }
+
+        function updateStatus(elementId, message, type) {
+            const element = document.getElementById(elementId);
+            element.textContent = message;
+            element.className = `status ${type}`;
+        }
+
+        // Initialize
+        window.onload = function() {
+            // Initialize Auth0
+            if (!initializeAuth0()) {
+                // Retry after a short delay
+                setTimeout(() => {
+                    if (initializeAuth0()) {
+                        handleAuthCallback();
+                    } else {
+                        updateStatus('auth-status', 'Failed to load Auth0 library', 'error');
+                    }
+                }, 1000);
+            } else {
+                handleAuthCallback();
+            }
+            
+            // Check if user is already authenticated
+            const expiresAt = JSON.parse(localStorage.getItem('expires_at'));
+            if (expiresAt && new Date().getTime() < expiresAt) {
+                updateStatus('auth-status', 'Already authenticated', 'success');
+                // You'd need to get user info from stored token here
+            }
+        };
+    </script>
+</body>
+</html>
