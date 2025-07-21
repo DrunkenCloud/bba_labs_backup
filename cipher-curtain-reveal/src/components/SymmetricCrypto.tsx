@@ -22,20 +22,40 @@ const SymmetricCrypto = () => {
   const vigenereEncrypt = (text: string, key: string): string => {
     if (!text || !key) return '';
     
-    const cleanText = text.toUpperCase().replace(/[^A-Z]/g, '');
-    const cleanKey = key.toUpperCase().replace(/[^A-Z]/g, '');
-    
+    const cleanKey = key.replace(/[^A-Za-z]/g, '').toUpperCase();
     if (cleanKey.length === 0) return text;
     
     let result = '';
     let keyIndex = 0;
     
-    for (let i = 0; i < cleanText.length; i++) {
-      const textChar = cleanText.charCodeAt(i) - 65;
-      const keyChar = cleanKey.charCodeAt(keyIndex % cleanKey.length) - 65;
-      const encryptedChar = (textChar + keyChar) % 26;
-      result += String.fromCharCode(encryptedChar + 65);
-      keyIndex++;
+    for (let i = 0; i < text.length; i++) {
+      const char = text[i];
+      
+      if (char >= 'A' && char <= 'Z') {
+        // Uppercase letters
+        const textChar = char.charCodeAt(0) - 65;
+        const keyChar = cleanKey.charCodeAt(keyIndex % cleanKey.length) - 65;
+        const encryptedChar = (textChar + keyChar) % 26;
+        result += String.fromCharCode(encryptedChar + 65);
+        keyIndex++;
+      } else if (char >= 'a' && char <= 'z') {
+        // Lowercase letters
+        const textChar = char.charCodeAt(0) - 97;
+        const keyChar = cleanKey.charCodeAt(keyIndex % cleanKey.length) - 65;
+        const encryptedChar = (textChar + keyChar) % 26;
+        result += String.fromCharCode(encryptedChar + 97);
+        keyIndex++;
+      } else if (char >= '0' && char <= '9') {
+        // Digits
+        const textDigit = parseInt(char);
+        const keyChar = cleanKey.charCodeAt(keyIndex % cleanKey.length) - 65;
+        const encryptedDigit = (textDigit + keyChar) % 10;
+        result += encryptedDigit.toString();
+        keyIndex++;
+      } else {
+        // Other characters (space, +, -, etc.) - leave unchanged
+        result += char;
+      }
     }
     
     return result;
@@ -44,20 +64,40 @@ const SymmetricCrypto = () => {
   const vigenereDecrypt = (text: string, key: string): string => {
     if (!text || !key) return '';
     
-    const cleanText = text.toUpperCase().replace(/[^A-Z]/g, '');
-    const cleanKey = key.toUpperCase().replace(/[^A-Z]/g, '');
-    
+    const cleanKey = key.replace(/[^A-Za-z]/g, '').toUpperCase();
     if (cleanKey.length === 0) return text;
     
     let result = '';
     let keyIndex = 0;
     
-    for (let i = 0; i < cleanText.length; i++) {
-      const textChar = cleanText.charCodeAt(i) - 65;
-      const keyChar = cleanKey.charCodeAt(keyIndex % cleanKey.length) - 65;
-      const decryptedChar = (textChar - keyChar + 26) % 26;
-      result += String.fromCharCode(decryptedChar + 65);
-      keyIndex++;
+    for (let i = 0; i < text.length; i++) {
+      const char = text[i];
+      
+      if (char >= 'A' && char <= 'Z') {
+        // Uppercase letters
+        const textChar = char.charCodeAt(0) - 65;
+        const keyChar = cleanKey.charCodeAt(keyIndex % cleanKey.length) - 65;
+        const decryptedChar = (textChar - keyChar + 26) % 26;
+        result += String.fromCharCode(decryptedChar + 65);
+        keyIndex++;
+      } else if (char >= 'a' && char <= 'z') {
+        // Lowercase letters
+        const textChar = char.charCodeAt(0) - 97;
+        const keyChar = cleanKey.charCodeAt(keyIndex % cleanKey.length) - 65;
+        const decryptedChar = (textChar - keyChar + 26) % 26;
+        result += String.fromCharCode(decryptedChar + 97);
+        keyIndex++;
+      } else if (char >= '0' && char <= '9') {
+        // Digits
+        const textDigit = parseInt(char);
+        const keyChar = cleanKey.charCodeAt(keyIndex % cleanKey.length) - 65;
+        const decryptedDigit = (textDigit - keyChar + 10) % 10;
+        result += decryptedDigit.toString();
+        keyIndex++;
+      } else {
+        // Other characters (space, +, -, etc.) - leave unchanged
+        result += char;
+      }
     }
     
     return result;
@@ -112,22 +152,6 @@ const SymmetricCrypto = () => {
 
     const decrypted = vigenereDecrypt(cipherText, decryptKey);
     setDecryptedText(decrypted);
-    
-    // Check if the decryption might be correct by seeing if it produces readable text
-    const hasReasonablePattern = /[AEIOU]/.test(decrypted) && decrypted.length > 0;
-    
-    if (hasReasonablePattern) {
-      toast({
-        title: "Decryption Complete",
-        description: "The key might be correct - check if the output makes sense!",
-      });
-    } else {
-      toast({
-        title: "Decryption Complete",
-        description: "The key might be incorrect - the output doesn't look like readable text.",
-        variant: "destructive"
-      });
-    }
   };
 
   return (
