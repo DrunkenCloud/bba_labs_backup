@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import type Web3 from 'web3';
 import type { Contract } from 'web3-eth-contract';
 import { useAuth0 } from '@auth0/auth0-react';
@@ -12,6 +12,12 @@ import { BlockchainCard } from './blockchain-card';
 import { LoggingCard } from './logging-card';
 import { AuditCard } from './audit-card';
 import AccessLoggerContract from '@/contracts/AccessLogger.json';
+
+declare global {
+  interface Window {
+    ethereum: any;
+  }
+}
 
 const CONTRACT_ADDRESS = '0x8BF8821A533DdDd65339594BCBC5C5DA65Af4d6c';
 
@@ -33,6 +39,7 @@ export default function AuthLoggerPage() {
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [isLogging, setIsLogging] = useState(false);
   const [isFetchingLogs, setIsFetchingLogs] = useState(false);
+  const [lastLoginTime, setLastLoginTime] = useState<number>(0);
 
   const [isAuditVisible, setIsAuditVisible] = useState(false);
 
@@ -75,7 +82,7 @@ export default function AuthLoggerPage() {
     }
   }, [toast]);
 
-  const logAccess = useCallback(async () => {
+  const logAccess = useCallback(async (customAction?: string) => {
     if (!contract || !user?.sub || accounts.length === 0) {
       toast({ variant: 'destructive', title: 'Error', description: 'Not ready to log. Check authentication and blockchain connection.' });
       return;
@@ -83,7 +90,7 @@ export default function AuthLoggerPage() {
     setIsLogging(true);
     try {
       const userId = user.sub;
-      const action = 'page_access';
+      const action = customAction || 'page_access';
       const timestamp = Math.floor(Date.now() / 1000);
 
       await contract.methods.logAccess(userId, action, timestamp).send({
@@ -98,6 +105,23 @@ export default function AuthLoggerPage() {
       setIsLogging(false);
     }
   }, [contract, user, accounts, toast]);
+
+  // Log authentication events automatically
+  useEffect(() => {
+    if (isAuthenticated && user?.sub && contract && !isLogging) {
+      const currentTime = Math.floor(Date.now() / 1000);
+      // Only log if this is a new login (prevent duplicate logs on page refresh)
+      if (currentTime - lastLoginTime > 300) { // 5 minutes threshold
+        setLastLoginTime(currentTime);
+        logAccess('user_login');
+      }
+    }
+  }, [isAuthenticated, user, contract, logAccess, lastLoginTime, isLogging]);
+
+  // Connect to blockchain when the page loads
+  useEffect(() => {
+    connectBlockchain();
+  }, [connectBlockchain]);
 
   const viewLogs = useCallback(async () => {
     if (!contract) {
