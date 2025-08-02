@@ -2,9 +2,8 @@ import type { Metadata } from 'next'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'v0 App',
-  description: 'Created with v0',
-  generator: 'v0.dev',
+  title: 'vc-vp-game',
+  description: 'A game for visualizing and validating blockchain transactions'
 }
 
 export default function RootLayout({
