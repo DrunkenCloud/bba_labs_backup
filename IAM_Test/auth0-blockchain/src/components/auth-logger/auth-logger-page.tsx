@@ -13,7 +13,7 @@ import { LoggingCard } from './logging-card';
 import { AuditCard } from './audit-card';
 import AccessLoggerContract from '@/contracts/AccessLogger.json';
 
-const CONTRACT_ADDRESS = '0xaa0B6b938e27d41F7cfc3fDc6A81566EB6417Bb1';
+const CONTRACT_ADDRESS = '0x8BF8821A533DdDd65339594BCBC5C5DA65Af4d6c';
 
 export interface LogEntry {
   userId: string;
@@ -88,7 +88,8 @@ export default function AuthLoggerPage() {
 
       await contract.methods.logAccess(userId, action, timestamp).send({
         from: accounts[0],
-        gas: 200000
+        gas: 200000,
+        type: '0x0' // Force legacy transaction type for Ganache (no EIP-1559)
       });
       toast({ title: 'Success', description: 'Access event logged to the blockchain.' });
     } catch (error: any) {

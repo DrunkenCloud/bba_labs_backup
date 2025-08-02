@@ -145,7 +145,7 @@
         // Auth0 Configuration - REPLACE WITH YOUR VALUES
         const AUTH0_DOMAIN = 'dev-3vni85xxxmyl08u3.us.auth0.com';
         const AUTH0_CLIENT_ID = 'wYX9R7TekCAFJZpszlxKXphnnRwOeHUg';
-        const CONTRACT_ADDRESS = '0xaa0B6b938e27d41F7cfc3fDc6A81566EB6417Bb1';
+        const CONTRACT_ADDRESS = '0x8BF8821A533DdDd65339594BCBC5C5DA65Af4d6c';
         
         // Initialize Auth0 - wait for library to load
         let auth0Client;
@@ -179,6 +179,7 @@
         // Utility to load JSON file
         async function loadContractArtifact() {
             const response = await fetch('build/contracts/AccessLogger.json');
+            console.log(response);
             const artifact = await response.json();
             contractABI = artifact.abi;
             contractBytecode = artifact.bytecode;
