@@ -19,7 +19,7 @@ declare global {
   }
 }
 
-const CONTRACT_ADDRESS = '0x8BF8821A533DdDd65339594BCBC5C5DA65Af4d6c';
+const CONTRACT_ADDRESS = '0xA5eb397257D003bFDD767C405BdF2681ce187B99';
 
 export interface LogEntry {
   userId: string;
