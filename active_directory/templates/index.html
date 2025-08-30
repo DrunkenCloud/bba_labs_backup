@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Leaked Active Directory Accounts</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+    }
+  </style>
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen p-4">
+
+  <div class="bg-white p-8 rounded-2xl shadow-xl w-full max-w-5xl">
+    <h1 class="text-4xl font-bold text-gray-800 mb-6 text-center">Leaked Active Directory Accounts</h1>
+    
+    <!-- Table container with responsive overflow -->
+    <div class="overflow-x-auto">
+      <table class="min-w-full divide-y divide-gray-200 rounded-lg overflow-hidden">
+        <thead class="bg-gray-50">
+          <tr>
+            <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">DN</th>
+            <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Username</th>
+            <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">unicodePwd (Hex)</th>
+          </tr>
+        </thead>
+        <tbody id="users-table-body" class="bg-white divide-y divide-gray-200">
+          <!-- User data rows will be injected here by JavaScript -->
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+
+  <script>
+    // Fetch data from the /users endpoint and populate the table
+    fetch("/users")
+      .then(res => res.json())
+      .then(data => {
+        const tbody = document.getElementById("users-table-body");
+        
+        // Loop through each user object in the returned JSON data
+        data.forEach(user => {
+          const tr = document.createElement("tr");
+          tr.className = "hover:bg-gray-50 transition-colors duration-200";
+          
+          // Populate a table row with user data, using empty strings for missing values
+          tr.innerHTML = `
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${user.dn || ""}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${user.sAMAccountName || ""}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${user.unicodePwd || ""}</td>
+          `;
+          
+          // Add the new row to the table body
+          tbody.appendChild(tr);
+        });
+      })
+      .catch(error => {
+        console.error("Error fetching data:", error);
+        // Display an error message to the user
+        const tbody = document.getElementById("users-table-body");
+        tbody.innerHTML = `<tr><td colspan="4" class="px-6 py-4 text-center text-red-500">Failed to load user data. Please check the server.</td></tr>`;
+      });
+  </script>
+</body>
+</html>
